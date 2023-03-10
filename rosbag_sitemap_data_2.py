@@ -117,12 +117,18 @@ def gps_data(df_gps):
 
 
 def motion_data(df_motion):
-
+    linear_acceleration=[]
+    angular_velocity=[]
+    orientation=[]
     motion={}
     df_motion['data_deserialise']=0
     for i in range(len(df_motion['data'])):
         df_motion.iloc[i,4]=deserialize_cdr(df_motion.iloc[i,3], 'sensor_msgs/msg/Imu')
-        motion[df_motion.iloc[i,2]]=json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']
+        linear_acceleration.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['linear_acceleration'])
+        angular_velocity.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['angular_velocity'])
+        orientation.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['orientation'])
+
+        motion[df_motion.iloc[i,2]]=[linear_acceleration[i],angular_velocity[i],orientation[i]]
     return motion
 
 def speed_data(df_speed):
