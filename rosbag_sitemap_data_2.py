@@ -7,6 +7,7 @@ https://ternaris.gitlab.io/rosbags/topics/serde.html
 
 Author: haris.khan@fountech.ai
 
+last modified: 16 March 2023
 """
 
 import pandas as pd
@@ -21,15 +22,15 @@ import warnings
 
 warnings.filterwarnings('ignore')
 
-motion_topic_id = 4
-infer_topic_id = 1
+motion_topic_id = 1
+infer_topic_id = 2
 speed_topic_id = 3
-gps_topic_id = 2
+gps_topic_id = 4
 
 def main():
     """
     input arguments: URL-of-the-rosbag data-type (if data-type is not specified it will return the value for al the data types)
-
+    return: the requested field for the rosbag URL provided
     """
     temp_local_path = os.path.join(os.path.realpath(os.path.dirname(__file__)), 'temp.db3')
     #temp_local_path = "/home/haris/rosbag_decode/car-48b02d822516-rosbag-Mon-30-Jan-2023-05.48.00.pm-to-05.48.30.pm.db3"
@@ -106,43 +107,44 @@ def gps_data(df_gps):
     df_gps['data_deserialise']=0
     latitude=[]
     longitude=[]
-    location=[]
     gps={}
     for i in range(len(df_gps['data'])):
         df_gps.iloc[i,4]=deserialize_cdr(df_gps.iloc[i,3], 'sensor_msgs/msg/NavSatFix')
         latitude.append(json.loads(pd.Series(df_gps.iloc[i,4]).to_json(orient = 'columns'))['0']['latitude'])
         longitude.append(json.loads(pd.Series(df_gps.iloc[i,4]).to_json(orient = 'columns'))['0']['longitude'])
-        gps[df_gps.iloc[i,2]]=[latitude[i],longitude[i]]
+        gps[df_gps.iloc[i,2]]={'latitude':latitude[i],'longitude':longitude[i]}
     return gps
 
 
 def motion_data(df_motion):
+    
+    df_motion['data_deserialise']=0
     linear_acceleration=[]
     angular_velocity=[]
     orientation=[]
     motion={}
-    df_motion['data_deserialise']=0
     for i in range(len(df_motion['data'])):
         df_motion.iloc[i,4]=deserialize_cdr(df_motion.iloc[i,3], 'sensor_msgs/msg/Imu')
         linear_acceleration.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['linear_acceleration'])
         angular_velocity.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['angular_velocity'])
         orientation.append(json.loads(pd.Series(df_motion.iloc[i,4]).to_json(orient = 'columns'))['0']['orientation'])
 
-        motion[df_motion.iloc[i,2]]=[linear_acceleration[i],angular_velocity[i],orientation[i]]
+        motion[df_motion.iloc[i,2]]={'linear_acceleration':linear_acceleration[i],'angular_velocity':angular_velocity[i],'orientation':orientation[i]}
     return motion
 
 def speed_data(df_speed):
 
-    speed={}
     df_speed['data_deserialise']=0
+    speed={}
     for i in range(len(df_speed['data'])):     
         df_speed.iloc[i,4]=deserialize_cdr(df_speed.iloc[i,3], 'std_msgs/msg/Float32')
-        speed[df_speed.iloc[i,2]]=json.loads(pd.Series(df_speed.iloc[i,4]).to_json(orient = 'columns'))['0']['data']
+        speed[df_speed.iloc[i,2]]={'speed':json.loads(pd.Series(df_speed.iloc[i,4]).to_json(orient = 'columns'))['0']['data']}
     return speed
 
 def infer_data(df_infer):
-    infer={}
+
     df_infer['data_deserialise']=0
+    infer={}
     for i in range(len(df_infer['data'])):
         df_infer.iloc[i,4]=deserialize_cdr(df_infer.iloc[i,3], 'visualization_msgs/msg/ImageMarker')
         infer[df_infer.iloc[i,2]]=json.loads(pd.Series(df_infer.iloc[i,4]).to_json(orient = 'columns'))['0']
